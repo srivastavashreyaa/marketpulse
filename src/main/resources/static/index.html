@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Smart Watchlist · adaptive stock signals</title>
+<meta name="description" content="A watchlist that tells you what actually deserves your attention, scored against each stock's own volatility.">
+<meta name="theme-color" content="#070a12">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%237c8cff'/%3E%3Cstop offset='1' stop-color='%2322d3ee'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='9' fill='url(%23g)'/%3E%3Cpath d='M6 21l6-7 5 4 9-11' fill='none' stroke='white' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="css/style.css">
+<script>try{var t=localStorage.getItem('sw.theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+</head>
+<body>
+<div class="aurora" aria-hidden="true"><i></i><i></i><i></i></div>
+<div class="grain" aria-hidden="true"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-7 5 4 7-9"/></svg></div>
+    <div><b>Smart Watchlist</b><small>adaptive signals</small></div>
+  </div>
+  <div class="search">
+    <svg class="ico" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <input id="q" type="text" placeholder="Search or add a stock: TCS, Apple, NVDA…" autocomplete="off" spellcheck="false" aria-label="Search stocks" role="combobox" aria-expanded="false" aria-controls="suggest">
+    <kbd>/</kbd>
+    <div class="suggest" id="suggest" role="listbox" hidden></div>
+  </div>
+  <div class="top-actions">
+    <div id="acct" class="acct"></div>
+    <span class="mode" id="mode" title="Data source"><i></i><span>CONNECTING</span></span>
+    <button class="icon-btn" id="refresh" title="Refresh now (R)" aria-label="Refresh">
+      <svg class="ring" viewBox="0 0 38 38" id="ring"><circle class="bg" cx="19" cy="19" r="18"/><circle class="fg" cx="19" cy="19" r="18"/></svg>
+      <svg class="rf" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+    </button>
+    <button class="icon-btn" id="theme" title="Toggle theme" aria-label="Toggle theme">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banners"></div>
+  <section class="markets" id="markets" aria-label="Market overview"></section>
+
+  <section class="pulse card" id="pulse" aria-live="polite"></section>
+
+  <section class="toolbar" id="toolbar" hidden>
+    <h2>Your watchlist <span class="count" id="count">0</span></h2>
+    <div class="chips" id="chips"></div>
+    <div class="spacer"></div>
+    <select class="sel" id="sort" aria-label="Sort">
+      <option value="added">Sort: Added</option>
+      <option value="signal">Sort: Signal strength</option>
+      <option value="change">Sort: Day change</option>
+      <option value="alpha">Sort: A to Z</option>
+    </select>
+    <div class="seg" role="group" aria-label="View">
+      <button id="vGrid" title="Cards" aria-label="Card view"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></button>
+      <button id="vList" title="List" aria-label="List view"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+    </div>
+    <button class="btn" id="seen" title="Reset the 'since you last looked' baseline to now"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Mark all seen</button>
+  </section>
+
+  <section class="grid" id="grid" aria-label="Watchlist"></section>
+  <section class="empty card" id="empty" hidden></section>
+
+  <section class="insights" id="insights" hidden>
+    <div class="panel card" id="radar"></div>
+    <div class="panel card" id="heatPanel">
+      <h3>Correlation map</h3>
+      <p class="sub">How closely your stocks move together (last 90 trading days, aligned by date).</p>
+      <div class="heat" id="heat"></div>
+      <div class="legend"><span>-1</span><i></i><span>+1</span></div>
+    </div>
+  </section>
+
+  <p class="foot">Signals compare each move with a stock's own recent volatility. This is a decision aid, not investment advice.<br>Market data from Yahoo Finance's public endpoint and may be delayed. Demo data is simulated and labelled as such.</p>
+</main>
+
+<div class="modal" id="auth" hidden>
+  <div class="modal-card card" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <button class="icon-btn m-x" id="authX" aria-label="Close" type="button"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <div class="logo m-logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-7 5 4 7-9"/></svg></div>
+    <h2 id="authTitle">Welcome back</h2>
+    <p class="muted m-sub" id="authSub">Log in to see your saved watchlist on any device.</p>
+    <div class="tabs2" role="tablist"><button type="button" role="tab" data-m="login">Log in</button><button type="button" role="tab" data-m="signup">Sign up</button></div>
+    <form id="authForm" novalidate>
+      <label id="nameRow" hidden>Name <span class="muted">(optional)</span><input id="aName" type="text" autocomplete="name" maxlength="40" placeholder="Shreya"></label>
+      <label>Email<input id="aEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" required></label>
+      <label>Password<span class="pw"><input id="aPass" type="password" autocomplete="current-password" placeholder="At least 8 characters" required><button type="button" id="pwToggle" aria-label="Show password">Show</button></span></label>
+      <p class="err" id="authErr" role="alert" hidden></p>
+      <button class="btn primary big" id="authSubmit" type="submit">Log in</button>
+    </form>
+    <p class="fine" id="authFine"></p>
+  </div>
+</div>
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Stock details" aria-hidden="true"><div class="dr-in" id="drawerBody"></div></aside>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

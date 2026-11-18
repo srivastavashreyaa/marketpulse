@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: smart-watchlist
+    runtime: docker
+    plan: free
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: DEMO_FALLBACK   # show clearly-labelled demo prices if Yahoo blocks the host
+        value: "true"
